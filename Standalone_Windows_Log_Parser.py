@@ -133,9 +133,9 @@ def backup_logs(logs):
 #           EventDate     
 ################################################################################
 def is_off_hours(EventDate):
-    dt = datetime.datetime.strptime(EventDate[:-4],
+    dt = datetime.datetime.strptime(EventDate[0:19],
                 '%Y-%m-%dT%H:%M:%S')
-    dd = datetime.datetime.strptime(EventDate[:-13],
+    dd = datetime.datetime.strptime(EventDate[0:10],
                 '%Y-%m-%d')            
     if dt.isoweekday() not in range(1,6) or dt.hour not in range(7,18
                 ) or dd in holidays:
