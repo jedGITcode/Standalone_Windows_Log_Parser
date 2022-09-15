@@ -66,7 +66,13 @@ report_log = "reportlog.txt"
 reports = {}
 
 # Logs to backup/rotate/search
-logs = ['Application', 'Microsoft-Windows-Application-Experience/Program-Inventory'
+# Some logs that do no exist will hang the script
+# Microsoft-Windows-CertificationAuthority
+# Microsoft-Windows-DNSServer/Analytical
+# Microsoft-Windows-USB-USBHUB3-Analytic
+logs = [
+'Application'
+, 'Microsoft-Windows-Application-Experience/Program-Inventory'
 , 'Microsoft-Windows-AppLocker/EXE and DLL'
 , 'Microsoft-Windows-AppLocker/MSI and Script'
 , 'Microsoft-Windows-AppLocker/Packaged app-Deployment'
@@ -76,7 +82,7 @@ logs = ['Application', 'Microsoft-Windows-Application-Experience/Program-Invento
 , 'Microsoft-Windows-CodeIntegrity/Operational'
 , 'Microsoft-Windows-DNS-Client/Operational'
 , 'Microsoft-Windows-DNSServer/Analytical'
-, 'Microsoft-Windows-Kernel-PnP/Device Configuration'
+, 'Microsoft-Windows-Kernel-PnP/Configuration'
 , 'Microsoft-Windows-LSA/Operational'
 , 'Microsoft-Windows-NetworkProfile/Operational'
 , 'Microsoft-Windows-Powershell/Operational'
@@ -88,7 +94,7 @@ logs = ['Application', 'Microsoft-Windows-Application-Experience/Program-Invento
 , 'Microsoft-Windows-Windows Firewall With Advanced Security/Firewall'
 , 'Microsoft-Windows-WindowsUpdateClient/Operational'
 , 'Microsoft-Windows-WLAN-AutoConfig/Operational'
-, 'Powershell'
+, 'Microsoft-Windows-WinRM/Operational'
 , 'RemoteAccess'
 , 'Security'
 , 'Setup'
@@ -102,7 +108,6 @@ logs = ['Application', 'Microsoft-Windows-Application-Experience/Program-Invento
 if not os.path.exists(report_dir):
     os.makedirs(report_dir)
 
-
 ################################################################################
 # Enable logging 
 #      Turn on if not already, need for new systems and any updates that
@@ -114,7 +119,6 @@ def enable_logging(logs):
                         , stdout=sub.PIPE)
         result, err = call.communicate()
 
-
 ################################################################################
 # Backup Logs, Copy and clear system logs
 #      Args:
@@ -123,9 +127,8 @@ def enable_logging(logs):
 def backup_logs(logs):
     for log in logs:
         call = sub.Popen(["powershell", "WEVTUTIL CL \"" + log + "\" /BU:" 
-               + report_dir + log.replace("/", "-") + ".evtx"], stdout=sub.PIPE)
+               + report_dir + log.replace("/", "-").replace(" ", "-") + ".evtx"], stdout=sub.PIPE)
         result, err = call.communicate()
-
 
 ################################################################################
 # Is off hours
@@ -168,7 +171,7 @@ def query_events(eventIDs, logFile):
             first = False
     # Call powershell to query log file
     call = sub.Popen(["powershell", "WEVTUTIL qe /rd:true /c:99999 /lf:true "
-                      + "/f:text " + logFile.replace("/", "-") + ".evtx /q:\"*[System[ " + queryString
+                      + "/f:text " + logFile.replace("/", "-").replace(" ", "-") + ".evtx /q:\"*[System[ " + queryString
                       + "] ]\" "], stdout=sub.PIPE)
     result, err = call.communicate()
     # cp1252 resolves windows chars
@@ -384,7 +387,7 @@ def html_summary_report():
 ################################################################################
 # Enable Logging
 ################################################################################
-#enable_logging(logs)
+enable_logging(logs)
 
 
 ################################################################################
@@ -494,7 +497,7 @@ report_on(events, name, log, False, False)
 #      Microsoft-Windows-Kernel-PnP/Device Configuration
 ################################################################################
 name = "External_Media_Detection"
-log = "Microsoft-Windows-Kernel-PnP/Device Configuration"
+log = "Microsoft-Windows-Kernel-PnP/Configuration"
 events = ['400', '410']
 report_on(events, name, log, False, False)
 
@@ -930,18 +933,16 @@ events = ['1001']
 report_on(events, name, log, False, False)
 
 ################################################################################
+# Windows Remote Management WRM WinRM RM
+#      6, 10, 11, 13, 30, 31, 33, 162, 192
+#      Microsoft-Windows-WinRM/Operational
+################################################################################
+name = "Windows_Remote_Management"
+log = "Microsoft-Windows-WinRM/Operational"
+events = ['6', '10', '11', '13', '30', '31', '33', '162', '192']
+report_on(events, name, log, False, False)
+
+################################################################################
 # Generate Summary HTML
 ################################################################################
 html_summary_report()
-
-################################################################################
-# Copy Results
-# Uncomment and set Paths !!!!!!!!!!!!!!!!!!!
-################################################################################
-# Create Directory
-#if not os.path.exists( r"\\NetworkPath\\" + date.split('-')[0] + "\\" + date ):
-#    os.makedirs(r"\\NetworkPath\\" + date.split('-')[0] + "\\" + date)
-
-#Move Files
-#copytree(report_dir + date + "\\" + CN, r"\\NetworkPath\\" + date.split('-')[0] 
-#         + "\\" + date + "\\" + CN )
